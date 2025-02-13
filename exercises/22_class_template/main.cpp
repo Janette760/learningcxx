@@ -10,6 +10,10 @@ struct Tensor4D {
     Tensor4D(unsigned int const shape_[4], T const *data_) {
         unsigned int size = 1;
         // TODO: 填入正确的 shape 并计算 size
+        for (int i=0;i<4;i++){
+            shape[i]=shape_[i];
+            size *=shape_[i];
+        }
         data = new T[size];
         std::memcpy(data, data_, size * sizeof(T));
     }
@@ -28,6 +32,41 @@ struct Tensor4D {
     // 则 `this` 与 `others` 相加时，3 个形状为 `[1, 2, 1, 4]` 的子张量各自与 `others` 对应项相加。
     Tensor4D &operator+=(Tensor4D const &others) {
         // TODO: 实现单向广播的加法
+        //检查形状是否兼容 
+        //for (int i=0;i<4;++i)
+        //{
+        //    if(others.shape[i]!=1 && ohters.shape[i]!=shape[i]){
+        //        throw std::invalid_arguent("Shapes are not broadcast-compatible.");
+        //    }
+        //}
+       
+        //计算总元素个数
+        unsigned int this_size =1;
+        for (int i=0;i<4;++i)
+        {
+            this_size *=shape[i];
+        }
+        //遍历所有元素
+        for (unsigned int index=0;index<this_size;++index){
+            unsigned int this_index[4];
+            unsigned int other_index[4];
+            unsigned int temp_index =index;
+            //计算当前元素在this张量中的多维索引
+            for (int i=3;i>=0;--i)
+            {
+                this_index[i]=temp_index % shape[i];
+                temp_index /= shape[i];
+            }
+            //计算当前元素在others张量中的多维索引，处理广播情况
+            for (int i=0;i<4;++i)
+            {
+                other_index[i] = (others.shape[i]==1)?0:this_index[i];
+            }
+            //将others张量中对应元素的值加到this张量的当前元素上
+            unsigned int other_flat_index = other_index[0]*others.shape[1]*others.shape[2]*others.shape[3]+
+            other_index[1]*others.shape[2]*others.shape[3]+other_index[2]*others.shape[3]+other_index[3];
+            data[index]+= others.data[other_flat_index];
+        }
         return *this;
     }
 };
